@@ -1,9 +1,0 @@
-node_modules
-.next
-out
-dist
-.env
-.env*.local
-*.log
-coverage
-prisma/dev.db
