@@ -1,7 +1,14 @@
 import { redirect } from "next/navigation";
-
+import LocationTracker from "@/app/components/dashboard/LocationTracker";
 import { logoutAction } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/auth/session";
+import {
+  getWeatherByLocation,
+} from "@/lib/services/bmkg";
+
+import {
+  calculateFloodRisk,
+} from "@/lib/risk-engine";
 
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const user = await getCurrentUser();
@@ -9,9 +16,18 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
   if (!user) {
     redirect("/login");
   }
+const weather =
+  await getWeatherByLocation(
+    user.homeLatitude ?? -6.9175,
+    user.homeLongitude ?? 107.6191,
+  );
+
+const risk =
+  calculateFloodRisk(weather);
 
   return (
     <main className="dashboard">
+      <LocationTracker />
       <header className="dashboard-header">
         <div>
           <div className="eyebrow">Dashboard</div>
@@ -40,6 +56,31 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
         <article className="metric">
           <h2>Next module</h2>
           <p>Profile, lokasi prioritas, dan preference notifikasi.</p>
+        </article>
+
+        <article className="metric">
+          <h2>Curah Hujan</h2>
+          <p>{weather.rainfall} mm</p>
+        </article>
+
+        <article className="metric">
+          <h2>Kelembaban</h2>
+          <p>{weather.humidity}%</p>
+        </article>
+
+        <article className="metric">
+          <h2>Status Risiko</h2>
+          <p>{risk.level}</p>
+        </article>
+
+        <article className="metric">
+          <h2>Latitude</h2>
+          <p>{String(user.homeLatitude)}</p>
+        </article>
+
+        <article className="metric">
+          <h2>Longitude</h2>
+          <p>{String(user.homeLongitude)}</p>
         </article>
       </section>
     </main>

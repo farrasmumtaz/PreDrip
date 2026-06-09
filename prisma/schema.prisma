@@ -13,18 +13,30 @@ enum UserRole {
 }
 
 model User {
-  id            String               @id @default(uuid())
-  name          String
-  email         String               @unique
-  passwordHash  String               @map("password_hash")
-  role          UserRole             @default(USER)
-  homeAddress   String?              @map("home_address")
-  homeLatitude  Decimal?             @map("home_latitude")
-  homeLongitude Decimal?             @map("home_longitude")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @updatedAt @map("updated_at")
-  sessions      Session[]
-  resetTokens   PasswordResetToken[]
+  id String @id @default(uuid())
+
+  name  String
+  email String @unique
+
+  passwordHash String
+
+  role UserRole @default(USER)
+
+  homeAddress String?
+
+  homeLatitude  Float?
+  homeLongitude Float?
+
+  notificationEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+
+  resetTokens PasswordResetToken[]
+
+  reports CitizenReport[]
 
   @@index([role])
   @@map("users")
@@ -56,4 +68,69 @@ model PasswordResetToken {
   @@index([expiresAt])
   @@index([usedAt])
   @@map("password_reset_tokens")
+}
+
+model FloodHistory {
+  id        String  @id
+  latitude  Decimal
+  longitude Decimal
+
+  severity String
+
+  waterLevel Float
+
+  occurredAt DateTime
+}
+
+model WeatherSnapshot {
+  id String @id @default(uuid())
+
+  latitude  Decimal
+  longitude Decimal
+
+  rainfall Float?
+
+  humidity Float?
+
+  temperature Float?
+
+  weatherCode String?
+
+  recordedAt DateTime
+
+  createdAt DateTime @default(now())
+}
+
+model FloodRisk {
+  id String @id @default(uuid())
+
+  latitude  Decimal
+  longitude Decimal
+
+  score Float
+
+  level String
+
+  source String
+
+  createdAt DateTime @default(now())
+}
+
+model CitizenReport {
+  id String @id @default(uuid())
+
+  userId String
+
+  latitude  Decimal
+  longitude Decimal
+
+  waterLevel Float
+
+  description String
+
+  imageUrl String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

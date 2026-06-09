@@ -14,6 +14,9 @@ export interface AuthUser {
   name: string;
   email: string;
   role: "USER" | "ADMIN";
+
+  homeLatitude: number | null;
+  homeLongitude: number | null;
 }
 
 export async function createSession(userId: string): Promise<void> {
@@ -74,6 +77,8 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
           name: true,
           email: true,
           role: true,
+          homeLatitude: true,
+          homeLongitude: true,
         },
       },
     },
