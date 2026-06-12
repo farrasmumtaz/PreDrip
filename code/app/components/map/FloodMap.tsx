@@ -83,6 +83,28 @@ export default function FloodMap({
     }}
   />
 
+  {reports.map((report) => (
+  <Marker
+    key={report.id}
+    position={[
+      report.latitude,
+      report.longitude,
+    ]}
+  >
+    <Popup>
+      <strong>Laporan Warga</strong>
+
+      <br />
+
+      Tinggi Air:
+      {" "}
+      {report.waterLevel}
+      {" "}
+      cm
+    </Popup>
+  </Marker>
+))}
+
   {/* Marker Laporan Warga */}
   {reports.map((report) => (
     <Marker

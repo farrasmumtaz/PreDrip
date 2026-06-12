@@ -120,7 +120,8 @@ model CitizenReport {
   id String @id @default(uuid())
 
   userId String
-
+  user User @relation(fields: [userId], references: [id])
+  
   latitude  Decimal
   longitude Decimal
 
@@ -132,5 +133,5 @@ model CitizenReport {
 
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  
 }

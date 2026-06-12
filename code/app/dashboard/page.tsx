@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { calculateFloodRisk } from "@/lib/risk-engine";
 import { getWeatherByLocation } from "@/lib/services/bmkg";
+import Link from "next/link";
 
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const user = await getCurrentUser();
@@ -98,6 +99,29 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
             Logout
           </button>
         </form>
+
+        <div
+  style={{
+    display: "flex",
+    gap: "1rem",
+  }}
+>
+  <Link
+    href="/report"
+    className="button"
+  >
+    Buat Laporan
+  </Link>
+
+  <form action={logoutAction}>
+    <button
+      className="button button-secondary"
+      type="submit"
+    >
+      Logout
+    </button>
+  </form>
+</div>
       </header>
 
       <section className="grid">
@@ -166,48 +190,57 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
       </section>
 
       <section
-        style={{
-          marginTop: "2rem",
-        }}
-      >
-        <article className="metric">
-          <h2>Laporan Warga</h2>
+  style={{
+    marginTop: "2rem",
+  }}
+>
+  <article className="metric">
+    <h2>Laporan Warga</h2>
 
-          {
-            reportsRaw.length === 0 ? (
-              <p>Belum ada laporan.</p>
-            ) : (
-              reportsRaw.map((report) => (
-                <div
-                  key={report.id}
-                  style={{
-                    marginBottom: "1rem",
-                    paddingBottom: "1rem",
-                    borderBottom:
-                      "1px solid #ddd",
-                  }}
-                >
-                  <p>
-                    Tinggi Air:
-                    {" "}
-                    {report.waterLevel}
-                    {" "}
-                    cm
-                  </p>
+    {reportsRaw.length === 0 ? (
+      <p>Belum ada laporan.</p>
+    ) : (
+      reportsRaw.map((report) => (
+        <div
+          key={report.id}
+          style={{
+            marginBottom: "1rem",
+            padding: "1rem",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+          }}
+        >
+          <strong>
+            Tinggi Air: {report.waterLevel} cm
+          </strong>
 
-                  <p>
-                    {report.description}
-                  </p>
+          <p
+            style={{
+              marginTop: "0.5rem",
+            }}
+          >
+            {report.description}
+          </p>
 
-                  <small>
-                    {report.createdAt.toLocaleString()}
-                  </small>
-                </div>
-              ))
-            )
-          }
-        </article>
-      </section>
+          <small>
+            Lokasi:
+            {" "}
+            {Number(report.latitude).toFixed(5)}
+            ,
+            {" "}
+            {Number(report.longitude).toFixed(5)}
+          </small>
+
+          <br />
+
+          <small>
+            {report.createdAt.toLocaleString()}
+          </small>
+        </div>
+      ))
+    )}
+  </article>
+</section>
 
       <section
         style={{
