@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import L from "leaflet";
 
 import {
@@ -8,7 +9,14 @@ import {
   Marker,
   Popup,
   TileLayer,
+  useMap,
 } from "react-leaflet";
+
+import {
+  greenIcon,
+  orangeIcon,
+  redIcon,
+} from "./icons";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
@@ -23,17 +31,52 @@ L.Icon.Default.mergeOptions({
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+interface Report {
+  id: string;
+  latitude: number;
+  longitude: number;
+  waterLevel: number;
+}
+
 interface FloodMapProps {
   latitude: number;
   longitude: number;
   riskLevel: string;
+  reports: Report[];
+}
 
-  reports: {
-    id: string;
-    latitude: number;
-    longitude: number;
-    waterLevel: number;
-  }[];
+function FitBounds({
+  latitude,
+  longitude,
+  reports,
+}: {
+  latitude: number;
+  longitude: number;
+  reports: Report[];
+}): React.ReactElement | null {
+  const map = useMap();
+
+  useEffect(() => {
+    const points: [number, number][] = [
+      [latitude, longitude],
+
+      ...reports.map(
+        (report) =>
+          [
+            report.latitude,
+            report.longitude,
+          ] as [number, number],
+      ),
+    ];
+
+    const bounds = L.latLngBounds(points);
+
+    map.fitBounds(bounds, {
+      padding: [50, 50],
+    });
+  }, [map, latitude, longitude, reports]);
+
+  return null;
 }
 
 export default function FloodMap({
@@ -41,8 +84,7 @@ export default function FloodMap({
   longitude,
   riskLevel,
   reports,
-}: FloodMapProps) {
-
+}: FloodMapProps): React.ReactElement {
   const riskColor =
     riskLevel === "BAHAYA"
       ? "red"
@@ -52,81 +94,90 @@ export default function FloodMap({
 
   return (
     <MapContainer
-  center={[latitude, longitude]}
-  zoom={14}
-  style={{
-    height: "500px",
-    width: "100%",
-    borderRadius: "16px",
-  }}
->
-  <TileLayer
-    attribution="OpenStreetMap"
-    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  />
-
-  {/* Marker Lokasi User */}
-  <Marker position={[latitude, longitude]}>
-    <Popup>
-      Lokasi Anda
-    </Popup>
-  </Marker>
-
-  {/* Lingkaran Risiko */}
-  <Circle
-    center={[latitude, longitude]}
-    radius={500}
-    pathOptions={{
-      color: riskColor,
-      fillColor: riskColor,
-      fillOpacity: 0.25,
-    }}
-  />
-
-  {reports.map((report) => (
-  <Marker
-    key={report.id}
-    position={[
-      report.latitude,
-      report.longitude,
-    ]}
-  >
-    <Popup>
-      <strong>Laporan Warga</strong>
-
-      <br />
-
-      Tinggi Air:
-      {" "}
-      {report.waterLevel}
-      {" "}
-      cm
-    </Popup>
-  </Marker>
-))}
-
-  {/* Marker Laporan Warga */}
-  {reports.map((report) => (
-    <Marker
-      key={report.id}
-      position={[
-        report.latitude,
-        report.longitude,
-      ]}
+      center={[latitude, longitude]}
+      zoom={12}
+      style={{
+        height: "500px",
+        width: "100%",
+        borderRadius: "16px",
+      }}
     >
-      <Popup>
-        <strong>Laporan Warga</strong>
+      <FitBounds
+        latitude={latitude}
+        longitude={longitude}
+        reports={reports}
+      />
 
-        <br />
+      <TileLayer
+        attribution="OpenStreetMap"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
-        Tinggi Air:
-        {" "}
-        {report.waterLevel}
-        {" "}
-        cm
-      </Popup>
-    </Marker>
-  ))}
-</MapContainer>
+      {/* Lokasi User */}
+      <Marker
+        position={[latitude, longitude]}
+      >
+        <Popup>
+          <strong>Lokasi Anda</strong>
+        </Popup>
+      </Marker>
+
+      {/* Area Risiko */}
+      <Circle
+        center={[latitude, longitude]}
+        radius={500}
+        pathOptions={{
+          color: riskColor,
+          fillColor: riskColor,
+          fillOpacity: 0.25,
+        }}
+      />
+
+      {/* Marker Laporan Warga */}
+      {reports.map((report) => {
+        const icon =
+          report.waterLevel > 100
+            ? redIcon
+            : report.waterLevel > 50
+            ? orangeIcon
+            : greenIcon;
+
+        return (
+          <Marker
+            key={report.id}
+            position={[
+              report.latitude,
+              report.longitude,
+            ]}
+            icon={icon}
+          >
+            <Popup>
+              <strong>
+                Laporan Warga
+              </strong>
+
+              <br />
+
+              Tinggi Air:
+              {" "}
+              {report.waterLevel}
+              cm
+
+              <br />
+
+              Latitude:
+              {" "}
+              {report.latitude}
+
+              <br />
+
+              Longitude:
+              {" "}
+              {report.longitude}
+            </Popup>
+          </Marker>
+        );
+      })}
+    </MapContainer>
   );
 }
