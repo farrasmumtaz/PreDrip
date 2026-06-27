@@ -195,13 +195,4 @@ input:focus {
   height: 500px;
 }
 
-.leaflet-container img {
-  max-width: none !important;
-}
 
-.leaflet-pane,
-.leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow {
-  max-width: none !important;
-}
