@@ -2,7 +2,8 @@
 
 Diperiksa 20 Oktober 2026 lewat halaman publik, seri RR SACA&D, dan API ERA5.
 Seri SACA&D tidak cocok untuk 2015–2025. Kandidat ERA5 2015–2025 berhasil diunduh
-dan dinormalisasi untuk eksperimen retrospektif; label harian lengkap belum diperoleh.
+dan dinormalisasi untuk eksperimen retrospektif. Dua hari positif dari rilis resmi
+sudah dikurasi; label harian lengkap dan kelas negatif belum diperoleh.
 
 | Sumber | Temuan | Keputusan awal |
 |---|---|---|
@@ -14,6 +15,7 @@ dan dinormalisasi untuk eksperimen retrospektif; label harian lengkap belum dipe
 | [API prakiraan BMKG](https://data.bmkg.go.id/prakiraan-cuaca/) | Prakiraan tiga hari, interval tiga jam. | Kandidat integrasi tampilan cuaca di tahap lain. Bukan observasi historis untuk dataset training awal. |
 | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Reanalisis ERA5 dipatok eksplisit; request WIB 2015–2025 menghasilkan 4.018 hari tanpa missing pada hujan, kelembapan, dan suhu. Grid keluaran -7, 107.5 berbeda dari koordinat request -6.9175, 107.6191. | Kandidat EDA/eksperimen retrospektif. Bukan stasiun BMKG atau bukti fitur tersedia pada cutoff D. Manifest mencatat sumber, unit, grid, dan SHA-256. |
 | [Katalog BNPB](https://data.bnpb.go.id/api/3/action/package_search?q=kejadian&rows=100) | Katalog publik dapat dibaca. Kueri `kejadian` menghasilkan 70 metadata dataset; paket nasional terpilih yang ditinjau berisi rekap agregat atau tautan infografis. Kueri `bandung` mengembalikan 0 metadata dataset. | Katalog yang ditinjau belum memberi label harian Bandung; hasil pencarian 0 bukan bukti tidak ada data Bandung pada sumber lain. |
+| [Rilis Pemprov Jabar](https://jabarprov.go.id/berita/bey-machmudin-tinjau-banjir-bandang-braga-12039) dan [rilis BNPB](https://bnpb.go.id/berita/perkembangan-situasi-dan-penanganan-bencana-tanggal-17-maret-2025) | Isi laporan mengidentifikasi dua tanggal kejadian Kota Bandung: 2024-01-11 dan 2025-03-15; tanggal publikasi dipisahkan dari tanggal kejadian. | Seed label positif untuk audit join. Bukan daftar lengkap dan tidak membenarkan pemberian label 0 pada hari lain. Lihat [bukti](evidence/README.md). |
 
 FAQ BMKG juga menyebut RR diamati pukul 07.00 waktu setempat. Periode yang diwakili
 tanggal RR dan latensi publikasinya perlu dikonfirmasi sebelum join dengan label.
@@ -23,7 +25,8 @@ Jangan menganggap semua observasi tanggal D sudah tersedia pada akhir tanggal D.
 
 - Arsip RR Husein Bandung, seri ASCII, serta `sources.txt` berhasil diunduh dan
   disimpan di `data/raw/`. SHA-256 serta hasil audit dicatat pada
-  [temuan audit](findings/2026-10-20-initial-audit.md). Ekspor label belum diperoleh.
+  [temuan audit](findings/2026-10-20-initial-audit.md). Ekspor label lengkap belum diperoleh;
+  dua label positif telah dikurasi dari rilis resmi yang dibaca.
 - Permintaan terminal awal gagal pada jaringan terbatas. Setelah akses jaringan
   tersedia, kueri publik per stasiun berhasil; tidak perlu mengunduh seluruh arsip
   lintas negara. Tidak ada seri yang direkonstruksi dari potongan mesin pencari.

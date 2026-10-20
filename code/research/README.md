@@ -5,10 +5,13 @@ Seri SACA&D Husein Bandung sudah diaudit dan tidak cocok untuk 2015–2025.
 Alternatif **reanalisis ERA5** 2015–2025 telah diunduh dan dinormalisasi: 4.018 hari,
 tanpa nilai kosong pada tiga fitur yang diminta. ERA5 bukan observasi stasiun BMKG
 dan tidak membuktikan ketersediaan fitur pada cutoff operasional. Dataset gabungan
-cuaca dan label banjir belum tersedia. Belum ada training, skor evaluasi, atau bukti
+cuaca dan label yang layak training belum tersedia. Dua label positif awal dari
+rilis resmi sudah dikurasi untuk audit pasangan; kelas negatif belum tersedia.
+Belum ada training, skor evaluasi, atau bukti
 kemampuan prediksi banjir Bandung. Angka pada `fixtures/` seluruhnya sintetis.
 Lihat [hasil audit data asli](findings/2026-10-20-initial-audit.md).
 Lihat pula [hasil akuisisi ERA5](findings/2026-10-20-era5-acquisition.md).
+Referensi label awal tersedia di [catatan bukti](evidence/README.md).
 
 ## Pertanyaan eksperimen
 
@@ -131,11 +134,23 @@ tersedia pada cutoff serta label 0/1 terverifikasi.
 
 ## Menjalankan audit pasangan
 
+Audit pilot cuaca ERA5 asli dan dua label positif yang telah diperiksa:
+
+```powershell
+npm.cmd run data:audit:pilot
+```
+
+Hasil saat ini: 4.018 hari cuaca, 2 pasangan label besok positif, 0 label negatif,
+4.016 hari tanpa label besok. Semua waktu ketersediaan fitur belum diverifikasi,
+sehingga `completeAvailablePairs=0` dan `trainingReadiness=blocked`.
+Ini hasil audit data asli parsial, bukan performa model.
+
 `--kind historical` adalah deklarasi pemilik data, bukan verifikasi otomatis sumber.
 CLI audit tidak menggunakan database aplikasi, tidak memanggil BMKG, dan tidak mengimpor
 snapshot dummy dashboard. Input asli tidak diubah. Output menyimpan SHA-256 kedua
 file untuk reproduksibilitas. Raw data, normalisasi, hasil audit, serta hasil kompilasi
-diabaikan Git; hanya kontrak, template, kode, dan fixture sintetis yang dilacak.
+diabaikan Git; kontrak, template, kode, fixture sintetis, dan kurasi kecil label
+positif beserta referensi publiknya dilacak.
 
 ## Membaca hasil
 
