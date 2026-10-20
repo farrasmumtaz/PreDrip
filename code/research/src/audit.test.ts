@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { createHash } from "node:crypto";
 
 import { auditDataset, isDate, LABEL_HEADERS, WEATHER_HEADERS } from "./audit";
 import { readCsv, writeCsv } from "./csv";
 import { inspectSacaRainfall } from "./saca";
 import { buildEra5Url, normalizeEra5 } from "./era5";
+import { buildDatasetView } from "./dataset-view";
 
 const options = { regionId: "kota-bandung", datasetKind: "synthetic" } as const;
 const weatherHeader = WEATHER_HEADERS.join(",");
@@ -219,4 +221,41 @@ test("normalized CSV writer round-trips quoted provenance without losing empty o
   assert.equal(rows[0]?.values.value, "0");
   assert.equal(rows[0]?.values.source, 'a,"b"\nc');
   assert.equal(rows[1]?.values.value, "");
+});
+
+function viewFixture() {
+  const weather = weatherCsv(
+    weatherRow("2025-01-01", { rainfall_mm: "0" }),
+    weatherRow("2025-01-02", { rainfall_mm: "" }),
+    weatherRow("2025-03-01", { rainfall_mm: "10.5" }),
+  );
+  const labels = labelCsv("2025-01-02,kota-bandung,1,https://example.invalid/event", "2025-03-02,kota-bandung,unknown,");
+  const manifest = {
+    datasetKind: "reanalysis", model: "ERA5", provider: "synthetic:test", timezone: "Asia/Jakarta",
+    acquiredAt: "2026-10-20T00:00:00Z", rows: 3, start: "2025-01-01", end: "2025-03-01",
+    request: { regionId: "kota-bandung", latitude: -6.9, longitude: 107.6, start: "2025-01-01", end: "2025-03-01" },
+    returnedGrid: { latitude: -7, longitude: 107.5, seriesId: "SYNTHETIC" },
+    files: { normalized: { sha256: createHash("sha256").update(weather).digest("hex") } },
+  };
+  return { weather, labels, manifest };
+}
+
+test("dataset chart preserves observed zero, missing rainfall, and absent months while reusing calendar audit", () => {
+  const input = viewFixture();
+  const view = buildDatasetView(input.manifest, input.weather, input.labels);
+  const months = view.rainfall[0]?.months;
+  assert.deepEqual(months?.[0], { month: 1, totalMm: 0, observedDays: 1, missingDays: 1 });
+  assert.deepEqual(months?.[1], { month: 2, totalMm: null, observedDays: 0, missingDays: 0 });
+  assert.equal(months?.[2]?.totalMm, 10.5);
+  assert.equal(view.audit.nextDayAlignment.floodPairs, 1);
+  assert.equal(view.audit.nextDayAlignment.noFloodPairs, 0);
+  assert.equal(view.evidence[0]?.date, "2025-03-02");
+});
+
+test("dataset view rejects edited CSV and stale count/period/grid metadata rather than displaying trusted-looking metrics", () => {
+  const input = viewFixture();
+  assert.throws(() => buildDatasetView(input.manifest, input.weather + "\n", input.labels), /CSV telah berubah/);
+  assert.throws(() => buildDatasetView({ ...input.manifest, rows: 4 }, input.weather, input.labels), /jumlah hari/);
+  assert.throws(() => buildDatasetView({ ...input.manifest, end: "2025-03-02" }, input.weather, input.labels), /Periode/);
+  assert.throws(() => buildDatasetView({ ...input.manifest, returnedGrid: { ...input.manifest.returnedGrid, seriesId: "OTHER" } }, input.weather, input.labels), /identitas seri/);
 });

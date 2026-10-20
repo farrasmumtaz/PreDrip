@@ -107,6 +107,13 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
   }}
 >
   <Link
+    href="/dataset"
+    className="button button-secondary"
+  >
+    Dataset & Audit
+  </Link>
+
+  <Link
     href="/report"
     className="button"
   >

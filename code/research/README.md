@@ -13,6 +13,37 @@ Lihat [hasil audit data asli](findings/2026-10-20-initial-audit.md).
 Lihat pula [hasil akuisisi ERA5](findings/2026-10-20-era5-acquisition.md).
 Referensi label awal tersedia di [catatan bukti](evidence/README.md).
 
+## Melihat dataset di web
+
+Jalankan aplikasi, login, lalu buka `/dataset` atau pilih **Dataset & Audit** pada
+dashboard. Halaman menampilkan ringkasan audit aktual, grafik akumulasi hujan bulanan
+dengan pilihan tahun, tabel angka per bulan, cakupan label, bukti kejadian, dan
+kesiapan eksperimen. Filter tahun memakai query `?year=2024` dan dirender di server.
+
+CSV serta manifest dibaca dari snapshot ERA5 lokal dan bukti label yang dilacak Git;
+laporan audit JSON lama tidak dipakai sebagai sumber angka. SHA-256 CSV, periode,
+jumlah hari, dan identitas seri diperiksa sebelum data ditampilkan. Jika snapshot
+belum tersedia atau tidak konsisten, halaman menampilkan status yang sesuai.
+Instalasi baru perlu menjalankan akuisisi ERA5 terlebih dahulu. Data tidak diunduh
+otomatis ketika seseorang membuka halaman. Snapshot lokal disertakan pada file
+tracing build route `/dataset`; deployment tetap memerlukan file tersebut.
+
+Halaman memerlukan login pada direct route dan menggunakan Server Component.
+Tidak ada endpoint API baru atau perubahan database. Grafik membedakan nol hujan,
+nilai kosong, dan bulan yang belum memiliki observasi. Persentase label adalah
+cakupan bukti, bukan probabilitas banjir. Dashboard cuaca utama masih modul terpisah.
+
+Verifikasi HTTP setelah server lokal aktif:
+
+```powershell
+npm.cmd run data:test:web
+```
+
+Verifikasi memakai user/session uji sementara yang dihapus pada akhir pemeriksaan;
+tidak memerlukan kredensial pengguna. Target default `http://127.0.0.1:3000`, hanya
+menerima host loopback. Pemeriksaan mencakup redirect tanpa login, isi audit,
+tautan sumber, filter tahun, dan fallback parameter yang tidak valid.
+
 ## Pertanyaan eksperimen
 
 Dengan informasi yang benar-benar tersedia paling lambat pukul 23:59:59.999 WIB
