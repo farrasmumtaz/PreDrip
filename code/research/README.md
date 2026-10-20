@@ -1,0 +1,146 @@
+# PreDrip: fondasi dataset dan audit awal
+
+Status 20 Oktober 2026: kontrak, template, CLI audit, dan pengujian tersedia.
+Satu seri curah hujan asli SACA&D Husein Bandung sudah diunduh dan diperiksa;
+hasilnya **tidak cocok untuk periode proposal 2015–2025**. Dataset gabungan cuaca
+dan label banjir belum tersedia. Belum ada training, skor evaluasi, atau bukti
+kemampuan prediksi banjir Bandung. Angka pada `fixtures/` seluruhnya sintetis.
+Lihat [hasil audit data asli](findings/2026-10-20-initial-audit.md).
+
+## Pertanyaan eksperimen
+
+Dengan informasi yang benar-benar tersedia paling lambat pukul 23:59:59.999 WIB
+pada tanggal D, apakah **ada banjir pada tanggal D+1** di satu wilayah studi?
+
+- Wilayah kandidat: **Kota Bandung**, `region_id=kota-bandung`.
+  Kabupaten Bandung dan Kabupaten Bandung Barat merupakan wilayah berbeda.
+  Pemilihan final mengikuti kecocokan catatan kejadian dan stasiun cuaca.
+- Unit data: satu wilayah pada satu tanggal kalender WIB; satu stasiun tetap
+  sebagai input awal. Penggabungan beberapa stasiun memerlukan desain tersendiri.
+- Horizon: satu hari; output klasifikasi harian, tanpa klaim waktu/jam banjir.
+- Periode belum ditetapkan: ambil irisan periode observasi dan label yang valid.
+  Rentang 2015–2025 dalam proposal bukan bukti bahwa data tersebut tersedia.
+- Definisi label 1: ada banjir pada hari target, termasuk kelanjutan kejadian
+  sebelumnya bila sumber mengonfirmasinya. Ini bukan target khusus onset banjir.
+  Daftar tanggal mulai kejadian saja belum cukup untuk label semua hari terdampak.
+- Cutoff di atas adalah rancangan eksperimen. Jika observasi harian baru tersedia
+  pukul 07.00 hari berikutnya, lag/ubah periode fitur; jangan menggeser timestamp
+  agar terlihat tersedia sebelum cutoff. Model operasional harus mengikuti latensi nyata.
+
+## Kontrak CSV normalisasi v1
+
+CSV UTF-8, delimiter koma, header wajib (urutan bebas), angka desimal memakai titik,
+tanggal `YYYY-MM-DD`. File mentah vendor dipertahankan terpisah. CSV bukan format
+impor langsung Excel BMKG. `source_ref` menunjuk file/bagian dokumen/ID rekaman asli
+yang dapat ditelusuri lewat catatan akuisisi.
+
+`templates/weather.csv`:
+
+| Kolom | Ketentuan |
+|---|---|
+| `date` | Tanggal periode observasi yang sudah dipetakan ke definisi hari studi. |
+| `region_id` | ID wilayah studi yang konsisten. |
+| `station_id` | ID stasiun asli; jangan diganti ID wilayah. |
+| `rainfall_mm` | Curah hujan harian mm; kosong jika missing, 0 hanya jika nol terukur. |
+| `humidity_pct` | Rata-rata kelembapan 0–100%; boleh kosong dan diaudit. |
+| `temperature_c` | Rata-rata suhu °C; boleh kosong dan diaudit. |
+| `available_at` | Waktu fitur pertama tersedia, ISO 8601 dengan offset/Z; kosong jika tidak diketahui. Bukan waktu download sekarang. |
+| `source_ref` | Referensi bukti observasi dan konvensi periode/waktu ketersediaan. Wajib. |
+
+`templates/flood-labels.csv`:
+
+| Kolom | Ketentuan |
+|---|---|
+| `date` | Tanggal banjir diamati/terjadi di wilayah, bukan waktu laporan diunggah. |
+| `region_id` | Wilayah yang sama dengan cuaca. |
+| `flood_status` | `1` = banjir terkonfirmasi; `0` = ketiadaan banjir didukung cakupan pemantauan; `unknown` = tidak cukup bukti. |
+| `source_ref` | Wajib untuk 0/1; referensi sumber dan cakupan pemantauan negatif harus dapat ditinjau. |
+
+Jangan membuat label 0 hanya dari tanggal yang tidak ada di daftar kejadian.
+Agregasikan beberapa kejadian pada wilayah/hari yang sama dengan aturan terdokumentasi;
+CLI menolak duplikat, bukan memilih salah satunya. Data crowd report aplikasi saat ini
+belum otomatis menjadi ground truth. Tanggal `createdAt` bukan jaminan tanggal kejadian.
+
+Kode khusus seperti 8888, 9999, atau -9999 ditolak sebagai angka cuaca. Baca kamus
+dataset yang benar sebelum mengubahnya menjadi missing. Batas fisik di CLI hanya
+pemeriksaan awal; nilai dalam rentang belum otomatis benar. Jangan mengisi missing
+dengan nol/median global. Transformasi yang belajar statistik dilakukan dari training
+saja setelah rancangan split waktu tersedia.
+
+## Menjalankan di PowerShell
+
+Dari `C:\PreDrip\code`, gunakan dependency yang sudah terpasang:
+
+```powershell
+npm.cmd run data:test
+npm.cmd run data:audit -- --help
+npm.cmd run data:audit:example
+```
+
+Contoh mencetak audit ke terminal dan bisa dijalankan berulang. Salinan hasil
+pemeriksaan awal tersedia lokal di `research/reports/example.synthetic.json`.
+Untuk menyimpan audit gunakan `--out <nama-baru.json>`; CLI menolak menimpa output
+yang sudah ada. Contoh sintetis sengaja berisi missing dan timestamp yang terlambat.
+
+Audit ulang seri asli yang sudah diunduh:
+
+```powershell
+npm.cmd run data:inspect:saca -- --file research/data/raw/RR_SOUID101993.txt --station 153 --source 101993 --start 2015-01-01 --end 2025-12-31
+```
+
+Exit 2 pada inspeksi ini adalah hasil penolakan kandidat sesuai audit, bukan crash.
+Seri mentah memakai 0,1 mm; inspector menampilkan statistik valid dalam mm dan
+memisahkan flag valid/suspect/missing. Baris bertanggal 2025 dengan flag missing
+tidak dihitung sebagai observasi 2025. Perbedaan STAID dengan metadata dilaporkan,
+bukan diperbaiki tanpa konfirmasi. Inspector tidak mengekspor data training.
+
+Setelah data asli dinormalisasi ke dua file tersebut:
+
+```powershell
+npm.cmd run data:audit -- --weather research/data/normalized/weather.csv --labels research/data/normalized/flood-labels.csv --region kota-bandung --kind historical --out research/reports/audit-historical-001.json
+```
+
+`--kind historical` adalah deklarasi pemilik data, bukan verifikasi otomatis sumber.
+CLI tidak menggunakan database aplikasi, tidak memanggil BMKG, dan tidak mengimpor
+snapshot dummy dashboard. Input asli tidak diubah. Output menyimpan SHA-256 kedua
+file untuk reproduksibilitas. Raw data, normalisasi, hasil audit, serta hasil kompilasi
+diabaikan Git; hanya kontrak, template, kode, dan fixture sintetis yang dilacak.
+
+## Membaca hasil
+
+- `issues`: record invalid, duplikat, konflik wilayah, satuan/format bermasalah.
+  Statistik memakai record valid; jika ada issue, hasil masih parsial.
+- `weather`: periode, stasiun, gap kalender **di antara tanggal valid pertama/terakhir**,
+  nilai kosong, waktu ketersediaan tidak diketahui, atau melewati cutoff.
+  Kekurangan di luar rentang file harus dibandingkan manual dengan rencana akuisisi.
+- `labels`: jumlah 1, 0, unknown yang valid; rasio ini mengikuti cakupan sumber,
+  belum otomatis mencerminkan prevalensi banjir sebenarnya.
+- `nextDayAlignment`: cuaca D dicocokkan dengan label D+1 berdasarkan kalender,
+  bukan baris berikutnya. `completeAvailablePairs` hanya menghitung pasangan dengan
+  ketiga fitur lengkap dan tersedia sebelum cutoff, bukan dataset siap training.
+- `structuralStatus=pass`: bentuk input lolos; missing/gap/label unknown masih mungkin ada.
+  Exit 0 untuk struktur lolos, 2 untuk struktur bermasalah/input kosong, 1 untuk
+  kegagalan format CSV/argumen/IO. Baca `blockers` walaupun exit 0.
+- `trainingReadiness=blocked`: alat ini tidak menyetujui training otomatis.
+  Provenance, keterwakilan spasial, konvensi waktu, dan label negatif perlu review.
+
+## Akuisisi berikutnya dan kriteria selesai tahap dataset
+
+1. Gunakan [daftar sumber yang sudah diperiksa](sources.md), prioritaskan observasi
+   harian stasiun yang mewakili wilayah dan catatan kejadian bertanggal.
+2. Peroleh contoh satu periode yang tumpang tindih terlebih dahulu, kemudian perluas
+   jika cocok. Simpan file asli dalam `data/raw/` dan catat URL, tanggal akses, pembuat,
+   lisensi/izin, stasiun, periode, definisi hari, kode missing, dan cakupan pelaporan
+   dalam salinan `templates/acquisition-notes.md` di `data/raw/`.
+3. Cocokkan lokasi dan waktu. Pastikan ada bukti memadai untuk label 0 serta 1;
+   simpan ketidakpastian sebagai unknown. Jika negatif tidak dapat dibuktikan,
+   revisi rancangan label/eksperimen sebelum supervised training.
+4. Normalisasi salinan data ke template, jalankan audit, perbaiki konflik sumber,
+   lalu dokumentasikan periode terpilih dan keterbatasannya.
+5. Tahap dataset selesai setelah data asli diperoleh, audit aktual ditinjau, definisi
+   target/cutoff disepakati berdasarkan sumber, dan kedua kelas cukup untuk rancangan
+   split waktu. Belum ada ambang jumlah kejadian yang dianggap cukup secara otomatis.
+
+Setelah itu: cleaning terdokumentasi, EDA, fitur lag/akumulasi hujan, split waktu,
+baseline sederhana → Logistic Regression → Random Forest → LSTM bila mendukung.
+Evaluasi precision, recall, F1, confusion matrix serta alarm palsu/banjir terlewat.

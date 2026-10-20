@@ -1,0 +1,6 @@
+date,region_id,station_id,rainfall_mm,humidity_pct,temperature_c,available_at,source_ref
+2025-01-01,kota-bandung,SYNTHETIC,0,70,26,2025-01-01T20:00:00+07:00,synthetic:weather-1
+2025-01-02,kota-bandung,SYNTHETIC,10,75,25,2025-01-02T20:00:00+07:00,synthetic:weather-2
+2025-01-03,kota-bandung,SYNTHETIC,40,90,24,2025-01-03T20:00:00+07:00,synthetic:weather-3
+2025-01-04,kota-bandung,SYNTHETIC,5,80,25,,synthetic:weather-4
+2025-01-05,kota-bandung,SYNTHETIC,,80,25,2025-01-06T07:00:00+07:00,synthetic:weather-5

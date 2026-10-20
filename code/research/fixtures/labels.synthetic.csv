@@ -1,0 +1,5 @@
+date,region_id,flood_status,source_ref
+2025-01-02,kota-bandung,0,synthetic:confirmed-no-flood-2
+2025-01-03,kota-bandung,1,synthetic:flood-3
+2025-01-04,kota-bandung,unknown,
+2025-01-05,kota-bandung,0,synthetic:confirmed-no-flood-5

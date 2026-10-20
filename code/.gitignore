@@ -7,3 +7,10 @@ dist
 *.log
 coverage
 prisma/dev.db
+.data-tools/
+research/data/raw/*
+research/data/normalized/*
+research/reports/*
+!research/data/raw/.gitkeep
+!research/data/normalized/.gitkeep
+!research/reports/.gitkeep
