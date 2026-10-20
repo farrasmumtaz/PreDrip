@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "lib": ["ES2022", "DOM"], "module": "CommonJS",
+    "moduleResolution": "Node", "rootDir": "../..", "outDir": "../../.data-tools/weather",
+    "strict": true, "noUncheckedIndexedAccess": true, "esModuleInterop": true,
+    "skipLibCheck": true, "types": ["node"]
+  },
+  "include": ["./*.ts", "../../lib/services/bmkg.ts", "../../lib/risk-engine.ts"]
+}

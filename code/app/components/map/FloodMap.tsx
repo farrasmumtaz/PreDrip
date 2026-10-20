@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import L from "leaflet";
+import type { RiskLevel } from "@/lib/risk-engine";
 
 import {
   Circle,
@@ -18,7 +19,8 @@ import {
   redIcon,
 } from "./icons";
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+const defaultIconPrototype = L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: (name: string) => string };
+delete defaultIconPrototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -41,7 +43,8 @@ interface Report {
 interface FloodMapProps {
   latitude: number;
   longitude: number;
-  riskLevel: string;
+  riskLevel: RiskLevel | null;
+  locationLabel?: string;
   reports: Report[];
 }
 
@@ -84,6 +87,7 @@ export default function FloodMap({
   longitude,
   riskLevel,
   reports,
+  locationLabel = "Lokasi Anda",
 }: FloodMapProps): React.ReactElement {
   const riskColor =
     riskLevel === "BAHAYA"
@@ -118,12 +122,12 @@ export default function FloodMap({
         position={[latitude, longitude]}
       >
         <Popup>
-          <strong>Lokasi Anda</strong>
+          <strong>{locationLabel}</strong>
         </Popup>
       </Marker>
 
       {/* Area Risiko */}
-      <Circle
+      {riskLevel !== null && <Circle
         center={[latitude, longitude]}
         radius={500}
         pathOptions={{
@@ -131,7 +135,7 @@ export default function FloodMap({
           fillColor: riskColor,
           fillOpacity: 0.25,
         }}
-      />
+      />}
 
       {/* Marker Laporan Warga */}
       {reports.map((report) => {

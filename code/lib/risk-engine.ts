@@ -1,66 +1,30 @@
-import { getWeatherByLocation, WeatherData } from "./services/bmkg";
+export type RiskLevel = "AMAN" | "WASPADA" | "BAHAYA";
 
-export type RiskLevel =
-  | "AMAN"
-  | "WASPADA"
-  | "BAHAYA";
-
-export interface RiskResult {
-  score: number;
-
-  level: RiskLevel;
-
-  recommendation: string;
+export interface RiskInput {
+  sourceKind: "daily_observation" | "forecast";
+  rainfallDailyMm: number | null;
+  humidityPercent: number | null;
 }
 
-export function calculateFloodRisk(
-  weather: WeatherData,
-): RiskResult {
+export type RiskResult =
+  | { status: "available"; method: "rule-based"; score: number; level: RiskLevel; recommendation: string }
+  | { status: "unavailable"; method: "rule-based"; score: null; level: null; recommendation: string };
 
-  let score = 0;
-
-  score += weather.rainfall * 0.7;
-
-  score += weather.humidity * 0.3;
-
-  score = Math.min(score, 100);
-
-    if (score < 30) {
+export function calculateFloodRisk(input: RiskInput): RiskResult {
+  const { rainfallDailyMm, humidityPercent } = input;
+  if (input.sourceKind !== "daily_observation" || rainfallDailyMm === null || humidityPercent === null ||
+      !Number.isFinite(rainfallDailyMm) || !Number.isFinite(humidityPercent) || rainfallDailyMm < 0 ||
+      humidityPercent < 0 || humidityPercent > 100) {
     return {
-      score,
-
-      level: "AMAN",
-
-      recommendation:
-        "Kondisi aman. Tetap pantau cuaca.",
+      status: "unavailable", method: "rule-based", score: null, level: null,
+      recommendation: "Skor aturan manual memerlukan curah hujan harian dan kelembapan dari observasi yang sesuai. Data prakiraan belum memenuhi input tersebut.",
     };
   }
-
-  if (score < 70) {
-    return {
-      score,
-
-      level: "WASPADA",
-
-      recommendation:
-        "Siapkan langkah antisipasi banjir.",
-    };
-  }
-
+  // Existing heuristic retained for comparable daily inputs; never a calibrated probability.
+  const score = Math.min(rainfallDailyMm * 0.7 + humidityPercent * 0.3, 100);
+  const level: RiskLevel = score < 30 ? "AMAN" : score < 70 ? "WASPADA" : "BAHAYA";
   return {
-    score,
-
-    level: "BAHAYA",
-
-    recommendation:
-      "Segera siapkan evakuasi.",
+    status: "available", method: "rule-based", score, level,
+    recommendation: "Indikator heuristik belum divalidasi untuk keputusan peringatan atau evakuasi. Pantau informasi resmi BPBD/BMKG.",
   };
 }
-
-const weather = await getWeatherByLocation(
-  -6.9175,
-  107.6191,
-);
-
-const risk =
-  calculateFloodRisk(weather);

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { RiskLevel } from "@/lib/risk-engine";
 
 const FloodMap = dynamic(
   () => import("./FloodMap"),
@@ -12,7 +13,8 @@ const FloodMap = dynamic(
 interface MapSectionProps {
   latitude: number;
   longitude: number;
-  riskLevel: string;
+  riskLevel: RiskLevel | null;
+  locationLabel?: string;
   reports: {
     id: string;
     latitude: number;
@@ -26,6 +28,7 @@ export default function MapSection({
   longitude,
   riskLevel,
   reports,
+  locationLabel,
 }: MapSectionProps) {
   return (
     <FloodMap
@@ -33,6 +36,7 @@ export default function MapSection({
       longitude={longitude}
       riskLevel={riskLevel}   
       reports={reports}
+      locationLabel={locationLabel}
     />
   );
 }
