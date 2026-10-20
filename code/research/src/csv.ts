@@ -3,6 +3,14 @@ export interface CsvRecord {
   values: Record<string, string>;
 }
 
+export function writeCsv(headers: readonly string[], rows: readonly Readonly<Record<string, string | number | null>>[]): string {
+  function escape(value: string | number | null | undefined): string {
+    const text = value === null || value === undefined ? "" : String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+  return [headers.map(escape).join(","), ...rows.map((row) => headers.map((header) => escape(row[header])).join(","))].join("\n") + "\n";
+}
+
 // Input is normalized UTF-8 CSV, not a vendor spreadsheet export.
 export function readCsv(text: string, expectedHeaders: readonly string[]): CsvRecord[] {
   const rows: string[][] = [];

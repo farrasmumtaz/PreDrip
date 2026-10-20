@@ -1,8 +1,8 @@
 # Pemeriksaan sumber dataset PreDrip
 
-Diperiksa 20 Oktober 2026 lewat halaman publik dan satu unduhan seri RR SACA&D.
-User mengonfirmasi sebelumnya belum memiliki dataset. Satu seri cuaca berhasil
-diunduh dalam sesi ini, tetapi tidak cocok untuk 2015–2025; label belum diperoleh.
+Diperiksa 20 Oktober 2026 lewat halaman publik, seri RR SACA&D, dan API ERA5.
+Seri SACA&D tidak cocok untuk 2015–2025. Kandidat ERA5 2015–2025 berhasil diunduh
+dan dinormalisasi untuk eksperimen retrospektif; label harian lengkap belum diperoleh.
 
 | Sumber | Temuan | Keputusan awal |
 |---|---|---|
@@ -12,6 +12,8 @@ diunduh dalam sesi ini, tetapi tidak cocok untuk 2015–2025; label belum dipero
 | [BNPB: tabel pencarian data bencana](https://gis.bnpb.go.id/databencana/tabel/pencarian.php) | Indeks pencarian publik memperlihatkan kolom tanggal kejadian, jenis, lokasi, kabupaten, dan provinsi. Pembukaan alat web gagal; permintaan terminal dengan akses jaringan menghasilkan HTTP 500. | Kandidat label kejadian, perlu akses/ekspor resmi dan verifikasi rentang serta kelengkapan Bandung. Tidak membuktikan hari tanpa banjir. |
 | [Portal SDI: jumlah kejadian bencana Jawa Barat](https://data.go.id/dataset/dataset/jumlah-kejadian-bencana-berdasarkan-jenis-bencana-di-jawa-barat1) | Metadata berisi jumlah kejadian dan tahun dengan agregasi kabupaten/kota; contoh ini tidak menyediakan tanggal tiap kejadian. | Hanya konteks/EDA agregat. Tidak cocok langsung sebagai label banjir harian. |
 | [API prakiraan BMKG](https://data.bmkg.go.id/prakiraan-cuaca/) | Prakiraan tiga hari, interval tiga jam. | Kandidat integrasi tampilan cuaca di tahap lain. Bukan observasi historis untuk dataset training awal. |
+| [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Reanalisis ERA5 dipatok eksplisit; request WIB 2015–2025 menghasilkan 4.018 hari tanpa missing pada hujan, kelembapan, dan suhu. Grid keluaran -7, 107.5 berbeda dari koordinat request -6.9175, 107.6191. | Kandidat EDA/eksperimen retrospektif. Bukan stasiun BMKG atau bukti fitur tersedia pada cutoff D. Manifest mencatat sumber, unit, grid, dan SHA-256. |
+| [Katalog BNPB](https://data.bnpb.go.id/api/3/action/package_search?q=kejadian&rows=100) | Katalog publik dapat dibaca. Kueri `kejadian` menghasilkan 70 metadata dataset; paket nasional terpilih yang ditinjau berisi rekap agregat atau tautan infografis. Kueri `bandung` mengembalikan 0 metadata dataset. | Katalog yang ditinjau belum memberi label harian Bandung; hasil pencarian 0 bukan bukti tidak ada data Bandung pada sumber lain. |
 
 FAQ BMKG juga menyebut RR diamati pukul 07.00 waktu setempat. Periode yang diwakili
 tanggal RR dan latensi publikasinya perlu dikonfirmasi sebelum join dengan label.
@@ -28,3 +30,8 @@ Jangan menganggap semua observasi tanggal D sudah tersedia pada akhir tanggal D.
 - Belum login, membuat akun, atau mengirim permintaan data ke BMKG/BPBD/BNPB.
 - Belum dapat menyatakan Kota Bandung lebih layak daripada Kabupaten Bandung;
   kandidat awal dipertahankan sampai contoh observasi dan label dapat dicocokkan.
+- Snapshot ERA5 dan hasil akuisisi tersedia; lihat
+  [laporan ERA5](findings/2026-10-20-era5-acquisition.md).
+- Halaman kejadian Barata Jabar mengembalikan halaman status layanan/penolakan akses
+  saat dibaca dari terminal; endpoint ArcGIS publik BNPB yang diperiksa HTTP 500.
+  Tidak ada akses login atau pembatasan yang dilewati.

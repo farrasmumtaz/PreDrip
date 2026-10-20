@@ -1,11 +1,14 @@
 # PreDrip: fondasi dataset dan audit awal
 
 Status 20 Oktober 2026: kontrak, template, CLI audit, dan pengujian tersedia.
-Satu seri curah hujan asli SACA&D Husein Bandung sudah diunduh dan diperiksa;
-hasilnya **tidak cocok untuk periode proposal 2015–2025**. Dataset gabungan cuaca
-dan label banjir belum tersedia. Belum ada training, skor evaluasi, atau bukti
+Seri SACA&D Husein Bandung sudah diaudit dan tidak cocok untuk 2015–2025.
+Alternatif **reanalisis ERA5** 2015–2025 telah diunduh dan dinormalisasi: 4.018 hari,
+tanpa nilai kosong pada tiga fitur yang diminta. ERA5 bukan observasi stasiun BMKG
+dan tidak membuktikan ketersediaan fitur pada cutoff operasional. Dataset gabungan
+cuaca dan label banjir belum tersedia. Belum ada training, skor evaluasi, atau bukti
 kemampuan prediksi banjir Bandung. Angka pada `fixtures/` seluruhnya sintetis.
 Lihat [hasil audit data asli](findings/2026-10-20-initial-audit.md).
+Lihat pula [hasil akuisisi ERA5](findings/2026-10-20-era5-acquisition.md).
 
 ## Pertanyaan eksperimen
 
@@ -15,8 +18,9 @@ pada tanggal D, apakah **ada banjir pada tanggal D+1** di satu wilayah studi?
 - Wilayah kandidat: **Kota Bandung**, `region_id=kota-bandung`.
   Kabupaten Bandung dan Kabupaten Bandung Barat merupakan wilayah berbeda.
   Pemilihan final mengikuti kecocokan catatan kejadian dan stasiun cuaca.
-- Unit data: satu wilayah pada satu tanggal kalender WIB; satu stasiun tetap
-  sebagai input awal. Penggabungan beberapa stasiun memerlukan desain tersendiri.
+- Unit data: satu wilayah pada satu tanggal kalender WIB; satu seri sumber tetap
+  sebagai input awal (stasiun atau grid yang ditandai eksplisit). Penggabungan
+  beberapa sumber memerlukan desain tersendiri.
 - Horizon: satu hari; output klasifikasi harian, tanpa klaim waktu/jam banjir.
 - Periode belum ditetapkan: ambil irisan periode observasi dan label yang valid.
   Rentang 2015–2025 dalam proposal bukan bukti bahwa data tersebut tersedia.
@@ -40,7 +44,7 @@ yang dapat ditelusuri lewat catatan akuisisi.
 |---|---|
 | `date` | Tanggal periode observasi yang sudah dipetakan ke definisi hari studi. |
 | `region_id` | ID wilayah studi yang konsisten. |
-| `station_id` | ID stasiun asli; jangan diganti ID wilayah. |
+| `station_id` | ID seri sumber: ID stasiun asli untuk observasi; prefix `grid:era5:` untuk grid reanalisis dengan koordinat sebenarnya pada manifest. Jangan diganti ID wilayah. Nama kolom dipertahankan untuk kompatibilitas kontrak v1. |
 | `rainfall_mm` | Curah hujan harian mm; kosong jika missing, 0 hanya jika nol terukur. |
 | `humidity_pct` | Rata-rata kelembapan 0–100%; boleh kosong dan diaudit. |
 | `temperature_c` | Rata-rata suhu °C; boleh kosong dan diaudit. |
@@ -100,8 +104,35 @@ Setelah data asli dinormalisasi ke dua file tersebut:
 npm.cmd run data:audit -- --weather research/data/normalized/weather.csv --labels research/data/normalized/flood-labels.csv --region kota-bandung --kind historical --out research/reports/audit-historical-001.json
 ```
 
+## Mengunduh kandidat ERA5
+
+```powershell
+npm.cmd run data:acquire:era5 -- --latitude=-6.9175 --longitude=107.6191 --region kota-bandung --start 2015-01-01 --end 2025-12-31
+```
+
+Snapshot periode ini sudah tersedia lokal. Pengulangan sengaja ditolak sebelum
+request jaringan jika nama output sudah ada; pakai `--name era5-bandung-refresh-001`
+untuk snapshot baru. Jalankan `--help` untuk melihat argumen. Tidak ada API key
+atau dependency baru yang dibutuhkan. Penggunaan endpoint publik mengikuti
+[ketentuan penyedia](https://open-meteo.com/en/terms).
+
+Satu eksekusi menghasilkan JSON mentah, manifest berisi URL request/koordinat grid/
+unit/SHA-256, dan CSV normalisasi. Model dipatok `era5`, hari mengikuti `Asia/Jakarta`,
+satuan mm/°C, grid terdekat tanpa penyesuaian elevasi. CLI memvalidasi format,
+panjang array, urutan kalender, rentang fisik awal, timezone, dan satuan sebelum
+menulis. Null tetap missing, nol tetap nol. Raw data dan hasil normalisasi lokal
+tidak dimasukkan ke Git.
+
+ERA5 mempunyai latensi publikasi/revisi. Semua `available_at` sengaja kosong
+karena waktu ketersediaan historis per hari belum diverifikasi. Waktu unduh tidak
+boleh menjadi penggantinya. Data ini dapat dipakai untuk EDA/eksperimen retrospektif;
+training untuk target operasional D+1 tetap membutuhkan rancangan fitur yang
+tersedia pada cutoff serta label 0/1 terverifikasi.
+
+## Menjalankan audit pasangan
+
 `--kind historical` adalah deklarasi pemilik data, bukan verifikasi otomatis sumber.
-CLI tidak menggunakan database aplikasi, tidak memanggil BMKG, dan tidak mengimpor
+CLI audit tidak menggunakan database aplikasi, tidak memanggil BMKG, dan tidak mengimpor
 snapshot dummy dashboard. Input asli tidak diubah. Output menyimpan SHA-256 kedua
 file untuk reproduksibilitas. Raw data, normalisasi, hasil audit, serta hasil kompilasi
 diabaikan Git; hanya kontrak, template, kode, dan fixture sintetis yang dilacak.

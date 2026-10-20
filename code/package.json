@@ -12,6 +12,7 @@
     "data:test": "npm run data:build && node --test .data-tools/audit.test.js",
     "data:audit:example": "npm run data:audit -- --weather research/fixtures/weather.synthetic.csv --labels research/fixtures/labels.synthetic.csv --region kota-bandung --kind synthetic",
     "data:inspect:saca": "npm run data:build && node .data-tools/inspect-saca.js",
+    "data:acquire:era5": "npm run data:build && node .data-tools/acquire-era5.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

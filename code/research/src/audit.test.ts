@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { auditDataset, isDate, LABEL_HEADERS, WEATHER_HEADERS } from "./audit";
-import { readCsv } from "./csv";
+import { readCsv, writeCsv } from "./csv";
 import { inspectSacaRainfall } from "./saca";
+import { buildEra5Url, normalizeEra5 } from "./era5";
 
 const options = { regionId: "kota-bandung", datasetKind: "synthetic" } as const;
 const weatherHeader = WEATHER_HEADERS.join(",");
@@ -159,4 +160,63 @@ test("SACA metadata identifiers must match actual series and source units must b
   assert.equal(inspection.identifierMismatch, true);
   assert.equal(inspection.decision, "reject_for_requested_period");
   assert.throws(() => inspectSacaRainfall(input.replace("0.1 mm", "mm"), { stationId: "153", sourceId: "101993", start: "2025-01-01", end: "2025-12-31" }));
+});
+
+const era5Request = { latitude: -6.9175, longitude: 107.6191, start: "2025-01-01", end: "2025-01-02", regionId: "kota-bandung" };
+function era5Fixture() {
+  return {
+    latitude: -7, longitude: 107.5, elevation: 700, timezone: "Asia/Jakarta", utc_offset_seconds: 25200,
+    daily_units: { time: "iso8601", precipitation_sum: "mm", relative_humidity_2m_mean: "%", temperature_2m_mean: "°C" },
+    daily: { time: ["2025-01-01", "2025-01-02"], precipitation_sum: [0, 10] as (number | null)[], relative_humidity_2m_mean: [80, 90], temperature_2m_mean: [25, 26] },
+  };
+}
+
+test("ERA5 acquisition pins one model, WIB day boundaries, units, and grid selection", () => {
+  const url = new URL(buildEra5Url(era5Request));
+  assert.equal(url.hostname, "archive-api.open-meteo.com");
+  assert.equal(url.searchParams.get("models"), "era5");
+  assert.equal(url.searchParams.get("timezone"), "Asia/Jakarta");
+  assert.equal(url.searchParams.get("cell_selection"), "nearest");
+  assert.equal(url.searchParams.get("elevation"), "nan");
+  assert.throws(() => buildEra5Url({ ...era5Request, latitude: 91 }));
+  assert.throws(() => buildEra5Url({ ...era5Request, start: "2025-02-01" }));
+});
+
+test("ERA5 normalization preserves zero/missing, identifies the returned grid, and never invents historical availability", () => {
+  const fixture = era5Fixture();
+  fixture.daily.precipitation_sum[1] = null;
+  const result = normalizeEra5(fixture, era5Request, "raw/source.manifest.json");
+  const rows = readCsv(result.csv, WEATHER_HEADERS);
+  assert.equal(rows[0]?.values.rainfall_mm, "0");
+  assert.equal(rows[1]?.values.rainfall_mm, "");
+  assert.equal(rows[0]?.values.available_at, "");
+  assert.match(rows[0]?.values.station_id ?? "", /^grid:era5:lat=-7:lon=107.5$/);
+  assert.equal(result.summary.unknownAvailability, 2);
+  assert.equal(result.summary.missingValues.rainfall, 1);
+  assert.match(rows[1]?.values.source_ref ?? "", /#date=2025-01-02$/);
+});
+
+test("ERA5 rejects unit/timezone mismatches, invalid values, and unequal arrays", () => {
+  const timezone = era5Fixture(); timezone.timezone = "GMT";
+  const units = era5Fixture(); units.daily_units.precipitation_sum = "inch";
+  const length = era5Fixture(); length.daily.temperature_2m_mean.pop();
+  const badValue = era5Fixture(); badValue.daily.relative_humidity_2m_mean[0] = 150;
+  for (const fixture of [timezone, units, length, badValue]) {
+    assert.throws(() => normalizeEra5(fixture, era5Request, "source"));
+  }
+});
+
+test("ERA5 rejects duplicate/shifted dates even if all array lengths match", () => {
+  const duplicate = era5Fixture(); duplicate.daily.time[1] = "2025-01-01";
+  const shifted = era5Fixture(); shifted.daily.time = ["2025-01-02", "2025-01-03"];
+  assert.throws(() => normalizeEra5(duplicate, era5Request, "source"));
+  assert.throws(() => normalizeEra5(shifted, era5Request, "source"));
+});
+
+test("normalized CSV writer round-trips quoted provenance without losing empty or zero values", () => {
+  const csv = writeCsv(["date", "value", "source"], [{ date: "2025-01-01", value: 0, source: 'a,"b"\nc' }, { date: "2025-01-02", value: null, source: "x" }]);
+  const rows = readCsv(csv, ["date", "value", "source"]);
+  assert.equal(rows[0]?.values.value, "0");
+  assert.equal(rows[0]?.values.source, 'a,"b"\nc');
+  assert.equal(rows[1]?.values.value, "");
 });
