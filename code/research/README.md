@@ -7,8 +7,10 @@ tanpa nilai kosong pada tiga fitur yang diminta. ERA5 bukan observasi stasiun BM
 dan tidak membuktikan ketersediaan fitur pada cutoff operasional. Dataset gabungan
 cuaca dan label yang layak training belum tersedia. Dua label positif awal dari
 rilis resmi sudah dikurasi untuk audit pasangan; kelas negatif belum tersedia.
-Belum ada training, skor evaluasi, atau bukti
-kemampuan prediksi banjir Bandung. Angka pada `fixtures/` seluruhnya sintetis.
+Update 23 Oktober 2026: training retrospektif dengan label proxy laporan DIBI
+sudah dijalankan melalui [pipeline eksperimen](experiments.md). Hasilnya belum
+membuktikan kemampuan peringatan banjir; dataset resmi tetap blocked.
+Angka pada `fixtures/` seluruhnya sintetis.
 Lihat [hasil audit data asli](findings/2026-10-20-initial-audit.md).
 Lihat pula [hasil akuisisi ERA5](findings/2026-10-20-era5-acquisition.md).
 Referensi label awal tersedia di [catatan bukti](evidence/README.md).
