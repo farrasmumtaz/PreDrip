@@ -10,6 +10,7 @@ import {
   Marker,
   Popup,
   TileLayer,
+  Tooltip,
   useMap,
 } from "react-leaflet";
 
@@ -91,10 +92,10 @@ export default function FloodMap({
 }: FloodMapProps): React.ReactElement {
   const riskColor =
     riskLevel === "BAHAYA"
-      ? "red"
+      ? "#991b1b"
       : riskLevel === "WASPADA"
-      ? "orange"
-      : "green";
+      ? "#854d0e"
+      : "#166534";
 
   return (
     <MapContainer
@@ -120,6 +121,8 @@ export default function FloodMap({
       {/* Lokasi User */}
       <Marker
         position={[latitude, longitude]}
+        alt={locationLabel}
+        title={locationLabel}
       >
         <Popup>
           <strong>{locationLabel}</strong>
@@ -135,7 +138,7 @@ export default function FloodMap({
           fillColor: riskColor,
           fillOpacity: 0.25,
         }}
-      />}
+      ><Tooltip permanent>{riskLevel}</Tooltip></Circle>}
 
       {/* Marker Laporan Warga */}
       {reports.map((report) => {
@@ -154,7 +157,10 @@ export default function FloodMap({
               report.longitude,
             ]}
             icon={icon}
+            alt={`Laporan warga, tinggi air ${report.waterLevel} cm, ${report.latitude}, ${report.longitude}`}
+            title={`Laporan warga: ${report.waterLevel} cm`}
           >
+            <Tooltip permanent direction="top" className="report-height">{report.waterLevel} cm</Tooltip>
             <Popup>
               <strong>
                 Laporan Warga

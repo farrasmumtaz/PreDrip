@@ -41,7 +41,7 @@ export default async function DatasetPage({ searchParams }: {
     </nav>
   );
   if (state.status !== "ready") {
-    return <main className={styles.page}>{navigation}<section className={styles.empty}>
+    return <main id="main-content" tabIndex={-1} className={styles.page}>{navigation}<section className={styles.empty}>
       <span className={styles.eyebrow}>DATASET PREDRIP</span>
       <h1>{state.status === "missing" ? "Dataset belum tersedia" : "Dataset perlu diperiksa"}</h1>
       <p>{state.status === "missing" ? "Snapshot penelitian belum tersedia pada instalasi ini. Siapkan data untuk menampilkan ringkasan, grafik hujan, dan audit label." : "Data dan metadata sumber belum konsisten. Ringkasan akan tersedia setelah snapshot diperiksa dan diperbarui."}</p>
@@ -69,7 +69,7 @@ export default async function DatasetPage({ searchParams }: {
   ];
 
   return (
-    <main className={styles.page}>
+    <main id="main-content" tabIndex={-1} className={styles.page}>
       {navigation}
       <header className={styles.header}>
         <div><span className={styles.eyebrow}>DATASET & KUALITAS DATA</span><h1>Fondasi sebelum prediksi.</h1><p>Kenali cakupan cuaca dan bukti banjir yang mendasari eksperimen PreDrip.</p></div>

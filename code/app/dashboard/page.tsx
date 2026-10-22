@@ -45,7 +45,7 @@ export default async function DashboardPage({ searchParams }: {
   }
 
   return (
-    <main className="dashboard">
+    <main id="main-content" tabIndex={-1} className="dashboard">
       <LocationTracker latitude={user.homeLatitude} longitude={user.homeLongitude} />
       <header className={styles.header}>
         <div><div className="eyebrow">PreDrip · Dashboard</div><h1>Halo, {user.name}</h1><p>{user.email} · {user.role}</p></div>

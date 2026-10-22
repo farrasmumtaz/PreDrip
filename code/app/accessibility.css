@@ -1,0 +1,21 @@
+:is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #0e7490;
+  outline-offset: 3px;
+}
+input:focus { outline-color: #0e7490; }
+button, select, summary, .button { min-height: 44px; touch-action: manipulation; }
+button:disabled { cursor: not-allowed; opacity: 1; background: #d7e1e8; color: #334155; }
+textarea, select { font: inherit; }
+.skip-link { position: absolute; left: 16px; top: -100px; z-index: 2000; padding: 12px; background: white; color: #155e75; }
+.skip-link:focus { top: 12px; }
+.message { margin-bottom: 16px; }
+.report-page { max-width: 640px; padding: 24px 16px; margin: 0 auto; }
+.report-page textarea { width: 100%; min-height: 120px; padding: 12px; border: 1px solid #64748b; border-radius: 6px; }
+.report-page input { border-color: #64748b; }
+.leaflet-container .leaflet-control-zoom a { width: 44px; height: 44px; line-height: 44px; }
+.leaflet-tooltip.report-height { color: #17212b; background: white; border: 1px solid #475569; font-size: 14px; font-weight: 700; }
+@media (max-width: 760px) {
+  .shell { min-height: 100svh; }
+  .footer-link a { display: inline-block; padding-block: 10px; }
+  .leaflet-container { max-height: 60svh; }
+}

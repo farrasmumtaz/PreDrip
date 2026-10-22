@@ -1,3 +1,4 @@
+import FormMessage from "@/app/components/FormMessage";
 import Link from "next/link";
 
 import { resetPasswordAction } from "@/app/actions/auth";
@@ -16,19 +17,18 @@ export default async function ResetPasswordPage({
   const token = params?.token ?? "";
 
   return (
-    <main className="shell">
+    <main id="main-content" tabIndex={-1} className="shell">
       <section className="panel">
         <div className="eyebrow">PreDrip</div>
         <h1>Reset password</h1>
         <p>Buat password baru untuk akun PreDrip.</p>
-        {params?.error ? (
-          <div className="message message-error">{params.error}</div>
-        ) : null}
+        <FormMessage error={params?.error} />
         <form action={resetPasswordAction}>
-          <input name="token" type="hidden" value={token} />
+          <input aria-describedby={params?.error ? "form-message" : undefined} name="token" type="hidden" value={token} />
           <label>
             Password baru
             <input
+              aria-describedby={params?.error ? "form-message" : undefined}
               name="password"
               type="password"
               autoComplete="new-password"

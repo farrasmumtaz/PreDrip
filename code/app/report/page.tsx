@@ -14,6 +14,7 @@ export default function ReportPage(): React.ReactElement {
 
   const [loading, setLoading] =
     useState<boolean>(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -22,6 +23,8 @@ export default function ReportPage(): React.ReactElement {
 
     try {
       setLoading(true);
+      setError("");
+      if (!navigator.geolocation) throw new Error("GPS tidak didukung pada perangkat ini.");
 
       const position =
         await new Promise<GeolocationPosition>(
@@ -29,6 +32,7 @@ export default function ReportPage(): React.ReactElement {
             navigator.geolocation.getCurrentPosition(
               resolve,
               reject,
+              { timeout: 10_000, maximumAge: 60_000 },
             );
           },
         );
@@ -55,32 +59,25 @@ export default function ReportPage(): React.ReactElement {
         });
 
       if (!response.ok) {
-        throw new Error(
-          "Gagal mengirim laporan",
-        );
+        const body: unknown = await response.json().catch(() => null);
+        const detail = body && typeof body === "object" && "error" in body && typeof body.error === "string" ? body.error : "Gagal mengirim laporan. Coba lagi.";
+        throw new Error(response.status === 401 ? "Sesi berakhir. Silakan login kembali sebelum mengirim laporan." : detail);
       }
-
-      alert("Laporan berhasil dikirim");
 
       router.push("/dashboard");
       router.refresh();
     } catch (error) {
-      console.error(error);
-
-      alert("Gagal mengirim laporan");
+      setError(error instanceof Error ? error.message : "GPS tidak tersedia atau izin ditolak. Aktifkan izin lokasi lalu coba lagi.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main
-      style={{
-        maxWidth: "600px",
-        margin: "2rem auto",
-      }}
-    >
+    <main id="main-content" tabIndex={-1} className="report-page">
       <h1>Buat Laporan Banjir</h1>
+      <p><a href="/dashboard">Kembali ke dashboard</a></p>
+      {error && <p id="report-error" role="alert" className="message message-error">{error}</p>}
 
       <form onSubmit={handleSubmit}>
         <div
@@ -88,11 +85,14 @@ export default function ReportPage(): React.ReactElement {
             marginBottom: "1rem",
           }}
         >
-          <label>
+          <label htmlFor="water-level">
             Tinggi Air (cm)
           </label>
 
           <input
+            id="water-level"
+            name="waterLevel"
+            aria-describedby={error ? "report-error" : undefined}
             type="number"
             min={0}
             max={2000}
@@ -112,11 +112,14 @@ export default function ReportPage(): React.ReactElement {
             marginBottom: "1rem",
           }}
         >
-          <label>
+          <label htmlFor="report-description">
             Deskripsi
           </label>
 
           <textarea
+            id="report-description"
+            name="description"
+            aria-describedby={error ? "report-error" : undefined}
             required
             maxLength={2000}
             value={description}
@@ -130,11 +133,12 @@ export default function ReportPage(): React.ReactElement {
         </div>
 
         <button
+          className="button"
           type="submit"
           disabled={loading}
         >
           {loading
-            ? "Mengirim..."
+            ? "Mengirim…"
             : "Kirim Laporan"}
         </button>
       </form>

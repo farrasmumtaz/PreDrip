@@ -11,7 +11,7 @@ export default async function HomePage(): Promise<React.ReactElement> {
   }
 
   return (
-    <main className="shell">
+    <main id="main-content" tabIndex={-1} className="shell">
       <section className="panel">
         <div className="eyebrow">PreDrip MVP</div>
         <h1>Flood risk intelligence, dimulai dari auth yang aman.</h1>

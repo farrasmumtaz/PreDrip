@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
+import "./accessibility.css";
 
 export const metadata: Metadata = {
   title: "PreDrip",
@@ -15,7 +16,7 @@ export default function RootLayout({
 }>): React.ReactElement {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body><a className="skip-link" href="#main-content">Lewati ke konten utama</a>{children}</body>
     </html>
   );
 }
