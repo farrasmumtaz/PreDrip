@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "security:test": "tsc -p tests/security/tsconfig.json && node --test .data-tools/security/tests/security/*.test.js",
     "data:build": "tsc -p research/tsconfig.json",
     "data:audit": "npm run data:build && node .data-tools/cli.js",
     "data:test": "npm run data:build && node --test .data-tools/audit.test.js",

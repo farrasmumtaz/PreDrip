@@ -74,7 +74,8 @@ CREATE TABLE "new_users" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
-INSERT INTO "new_users" ("email", "id", "name", "role") SELECT "email", "id", "name", "role" FROM "users";
+INSERT INTO "new_users" ("email", "id", "name", "role", "passwordHash", "homeAddress", "homeLatitude", "homeLongitude", "createdAt", "updatedAt")
+SELECT "email", "id", "name", "role", "password_hash", "home_address", "home_latitude", "home_longitude", "created_at", "updated_at" FROM "users";
 DROP TABLE "users";
 ALTER TABLE "new_users" RENAME TO "users";
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");

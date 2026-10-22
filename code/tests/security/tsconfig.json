@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "lib": ["ES2022", "DOM"], "module": "CommonJS",
+    "moduleResolution": "Node", "rootDir": "../..", "outDir": "../../.data-tools/security",
+    "strict": true, "noUncheckedIndexedAccess": true, "esModuleInterop": true,
+    "skipLibCheck": true, "types": ["node"]
+  },
+  "include": ["./*.ts", "../../lib/auth/**/*.ts", "../../lib/prisma.ts", "../../lib/validation.ts"],
+  "exclude": ["../../lib/auth/session.ts"]
+}
