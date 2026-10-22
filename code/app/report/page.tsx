@@ -94,6 +94,9 @@ export default function ReportPage(): React.ReactElement {
 
           <input
             type="number"
+            min={0}
+            max={2000}
+            step="any"
             value={waterLevel}
             onChange={(event) =>
               setWaterLevel(
@@ -114,6 +117,8 @@ export default function ReportPage(): React.ReactElement {
           </label>
 
           <textarea
+            required
+            maxLength={2000}
             value={description}
             onChange={(event) =>
               setDescription(

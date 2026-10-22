@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
+import { locationSchema } from "@/lib/validation";
 
 export async function POST(
   request: NextRequest,
@@ -20,12 +21,10 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-
-    const {
-      latitude,
-      longitude,
-    } = body;
+    const body: unknown = await request.json().catch(() => null);
+    const parsed = locationSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: "Koordinat tidak valid." }, { status: 400 });
+    const { latitude, longitude } = parsed.data;
 
     await prisma.user.update({
       where: {
