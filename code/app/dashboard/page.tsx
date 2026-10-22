@@ -46,7 +46,7 @@ export default async function DashboardPage({ searchParams }: {
 
   return (
     <main className="dashboard">
-      <LocationTracker />
+      <LocationTracker latitude={user.homeLatitude} longitude={user.homeLongitude} />
       <header className={styles.header}>
         <div><div className="eyebrow">PreDrip · Dashboard</div><h1>Halo, {user.name}</h1><p>{user.email} · {user.role}</p></div>
         <nav className={styles.actions} aria-label="Navigasi dashboard"><Link href="/dataset" className="button button-secondary">Dataset & Audit</Link><Link href="/report" className="button">Buat Laporan</Link><form action={logoutAction}><button className="button button-secondary" type="submit">Logout</button></form></nav>
