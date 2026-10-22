@@ -4,6 +4,9 @@ import { buildExamples, offsetDate } from "./experiment-data";
 import { fitLogistic, scoreLogistic, evaluate, chooseThreshold } from "./logistic";
 import { writeCsv } from "./csv";
 import { WEATHER_HEADERS } from "./audit";
+import { createHash } from "node:crypto";
+import { buildExperimentView } from "./experiment-view";
+import { DEFAULT_DATES, FEATURES } from "./experiment-data";
 
 const snapshot = { schemaVersion: 1, kind: "reported-events-not-ground-truth", regionId: "kota-bandung", sourceSha256: "a".repeat(64), archiveRows: 2, archiveStart: "2020-01-01", archiveEnd: "2020-01-20", events: [{ date: "2020-01-11", sourceRef: "https://dibi.bnpb.go.id/d/r/1" }] };
 const dates = { start: "2020-01-08", end: "2020-01-20", trainEnd: "2020-01-10", validationEnd: "2020-01-15" };
@@ -57,4 +60,23 @@ test("balanced training and undefined metrics remain explicit", () => {
   assert.equal(chooseThreshold([0, 1], [0.01, 0.99]), 0.9);
   assert.throws(() => evaluate([], [], 0.5));
   assert.throws(() => chooseThreshold([0, 0], [0, 0]));
+});
+
+test("dashboard recomputes historical inference; rejects changed inputs and incompatible model", () => {
+  const weather = csv(Array.from({ length: 3613 }, (_, index) => ({ ...weatherRows[0]!, date: offsetDate("2015-01-01", index), rainfall_mm: "2" })));
+  const events = JSON.stringify({ ...snapshot, archiveStart: "2015-01-01", archiveEnd: DEFAULT_DATES.end, events: [{ date: "2024-01-11", sourceRef: "https://dibi.bnpb.go.id/d/r/1" }] });
+  const hash = (text: string) => createHash("sha256").update(text).digest("hex");
+  const model = fitLogistic([Array(6).fill(1) as number[], Array(6).fill(1) as number[]], [0, 1]);
+  const artifact = { schemaVersion: 1, operationalUse: false, target: "next-day-report-in-DIBI-snapshot", positive: "reported-event-date", negative: "assumed-no-report-not-verified-no-flood", weather: "retrospective-ERA5-not-operational-forecast", score: "uncalibrated-not-flood-probability", dates: DEFAULT_DATES, features: FEATURES, threshold: 0.5, model,
+    inputs: { weather: { sha256: hash(weather) }, events: { sha256: hash(events), originalSha256: snapshot.sourceSha256 } } };
+  const view = buildExperimentView(JSON.stringify(artifact), weather, events);
+  assert.equal(view.metrics.rows, 1056);
+  assert.equal(view.metrics.tp, 1);
+  assert.equal(view.metrics.fp, 1055);
+  assert.equal(view.latest.targetDate, "2024-11-21");
+  assert.equal(view.latest.score, 0.5);
+  assert.throws(() => buildExperimentView(JSON.stringify(artifact), weather + "\n", events), /hash/);
+  assert.throws(() => buildExperimentView(JSON.stringify({ ...artifact, features: [...FEATURES].reverse() }), weather, events));
+  assert.throws(() => buildExperimentView(JSON.stringify({ ...artifact, operationalUse: true }), weather, events));
+  assert.throws(() => buildExperimentView(JSON.stringify({ ...artifact, model: { ...model, scales: Array(6).fill(0) as number[] } }), weather, events));
 });

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { logoutAction } from "@/app/actions/auth";
 import LocationTracker from "@/app/components/dashboard/LocationTracker";
+import ExperimentPanel from "@/app/components/dashboard/ExperimentPanel";
+import { loadExperiment } from "@/lib/experiments/load-experiment";
 import MapSection from "@/app/components/map/MapSection";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
@@ -25,10 +27,11 @@ export default async function DashboardPage({ searchParams }: {
   if (!user) redirect("/login");
   const params = await searchParams;
   const adm4 = params.adm4 === undefined ? DEFAULT_BMKG_ADM4 : typeof params.adm4 === "string" ? params.adm4 : "";
-  const [forecast, reportsRaw, totalReports] = await Promise.all([
+  const [forecast, reportsRaw, totalReports, experiment] = await Promise.all([
     getWeatherForecast(adm4),
     prisma.citizenReport.findMany({ take: 20, orderBy: { createdAt: "desc" } }),
     prisma.citizenReport.count(),
+    loadExperiment(),
   ]);
   const risk = calculateFloodRisk({ sourceKind: "forecast", rainfallDailyMm: null, humidityPercent: forecast.status === "ready" ? forecast.selected.humidityPercent : null });
   const latitude = user.homeLatitude ?? -6.9175;
@@ -64,6 +67,7 @@ export default async function DashboardPage({ searchParams }: {
         </> : <div role="status" className={styles.error}><h3>{forecast.reason === "invalid-area" ? "Wilayah prakiraan belum didukung" : forecast.reason === "stale" ? "Prakiraan terbaru belum tersedia" : "Prakiraan BMKG belum dapat dimuat"}</h3><p>{forecast.reason === "invalid-area" ? "Pilih salah satu kelurahan yang tersedia untuk menampilkan prakiraan." : "Data tidak ditampilkan karena belum dapat diverifikasi atau telah melewati masa berlaku. Coba muat kembali halaman dalam beberapa saat."}</p><Link href={isBmkgArea(adm4) ? `/dashboard?adm4=${adm4}` : "/dashboard"}>Muat ulang prakiraan</Link></div>}
         <p className={styles.attribution}>Data prakiraan cuaca: <a href={isBmkgArea(adm4) ? `https://www.bmkg.go.id/cuaca/prakiraan-cuaca/${adm4}` : "https://www.bmkg.go.id/cuaca/prakiraan-cuaca"} target="_blank" rel="noopener noreferrer">BMKG (Badan Meteorologi, Klimatologi, dan Geofisika) ↗</a>. Waktu ditampilkan dalam WIB.</p>
       </section>
+      <ExperimentPanel experiment={experiment} />
 
       <section className={styles.risk} aria-labelledby="risk-heading"><div><span className={styles.badge}>Metode: aturan manual · belum divalidasi</span><h2 id="risk-heading">Indikator risiko banjir: belum dinilai</h2><p>{risk.recommendation}</p><details><summary>Tentang perhitungan</summary><p>Rumus eksperimen: curah hujan harian × 0,7 + kelembapan × 0,3, dibatasi 100. Skor bukan probabilitas banjir atau keluaran model AI. Nilai prakiraan per slot tidak diperlakukan sebagai curah hujan harian. Ikuti informasi resmi BPBD/BMKG untuk kesiapsiagaan.</p></details></div></section>
 

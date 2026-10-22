@@ -78,3 +78,21 @@ Accuracy tinggi pada baseline hanya mencerminkan kelas yang sangat timpang.
 Skor logistic berbobot bukan probabilitas banjir yang terkalibrasi.
 
 Lihat [hasil eksperimen pertama](findings/2026-10-23-report-proxy-experiment.md).
+
+## Panel dashboard
+
+`/dashboard` memuat `report-proxy-v1/model.json` di server, memeriksa schema,
+urutan fitur dan SHA-256 kedua snapshot, lalu menjalankan koefisien tersimpan
+pada fitur historis untuk menghitung ulang evaluasi test dan keluaran terakhir.
+Angka panel tidak diketik manual dan `evaluation.json` bukan sumber tampilan.
+Tidak ada training ulang saat halaman dibuka. Panel menjelaskan periode historis,
+label proxy, precision, jumlah prediksi positif tanpa laporan, dan baseline.
+
+Data/model hilang atau tidak cocok menampilkan status tidak tersedia tanpa
+mengisi angka contoh. Pemilihan kelurahan BMKG tidak mengubah cakupan model Kota
+Bandung. Model tidak menerima prakiraan BMKG sebagai pengganti fitur ERA5 dan
+tidak menentukan status Aman/Waspada/Bahaya.
+
+Build tracing `/dashboard` menyertakan ketiga artefak lokal tersebut. Instalasi
+atau deployment baru perlu menyediakan snapshot dan menjalankan training dahulu;
+artefak tetap tidak dilacak Git. Tidak ada endpoint unduh data/model publik baru.

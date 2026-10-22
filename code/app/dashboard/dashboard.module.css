@@ -30,7 +30,7 @@
 .error p { font-size: 13px; margin-bottom: 10px; }
 .error a { font-size: 14px; }
 .risk { background: #f4f7fa; }
-.risk .badge { background: #e5ecf2; color: #5b7488; }
+.risk .badge { background: #e5ecf2; color: #40596e; }
 .risk p { font-size: 13px; margin-bottom: 10px; }
 .risk summary { cursor: pointer; font-size: 14px; color: #486d80; margin-top: 15px; }
 .risk details p { margin-top: 10px; }
@@ -48,3 +48,15 @@
 .risk summary, .sectionHeader a { display: inline-flex; align-items: center; }
 .table th:nth-child(n+3), .table td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
 .header > div { min-width: 0; overflow-wrap: anywhere; }
+.experimentMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 20px 0; border-block: 1px solid var(--border); }
+.experimentMetrics > div { padding: 16px 12px; }
+.experimentMetrics dt { font-size: 14px; color: #475569; }
+.experimentMetrics dd { margin: 8px 0 0; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.experimentDetails summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-size: 14px; }
+.experimentDetails p { font-size: 14px; margin-top: 12px; }
+@media (max-width: 600px) {
+  .header h1 { font-size: 24px; }
+  .sectionHeader { flex-direction: column; }
+  .experimentMetrics { grid-template-columns: 1fr; }
+  .experimentMetrics > div + div { border-top: 1px solid var(--border); }
+}
