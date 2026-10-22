@@ -244,8 +244,10 @@ test("dataset chart preserves observed zero, missing rainfall, and absent months
   const input = viewFixture();
   const view = buildDatasetView(input.manifest, input.weather, input.labels);
   const months = view.rainfall[0]?.months;
-  assert.deepEqual(months?.[0], { month: 1, totalMm: 0, observedDays: 1, missingDays: 1 });
-  assert.deepEqual(months?.[1], { month: 2, totalMm: null, observedDays: 0, missingDays: 0 });
+  assert.deepEqual(months?.[0], { month: 1, totalMm: 0, observedDays: 1, missingDays: 30 });
+  assert.deepEqual(months?.[1], { month: 2, totalMm: null, observedDays: 0, missingDays: 28 });
+  assert.equal(months?.[2]?.missingDays, 0);
+  assert.equal(months?.[3]?.missingDays, 0, "days outside the snapshot period are not counted");
   assert.equal(months?.[2]?.totalMm, 10.5);
   assert.equal(view.audit.nextDayAlignment.floodPairs, 1);
   assert.equal(view.audit.nextDayAlignment.noFloodPairs, 0);

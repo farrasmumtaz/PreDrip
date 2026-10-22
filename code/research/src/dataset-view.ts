@@ -61,6 +61,13 @@ export function buildDatasetView(manifest: unknown, weatherCsv: string, labelsCs
     throw new DatasetInputError("Periode, jumlah hari, atau identitas seri berbeda dari metadata sumber.");
   }
   const byYear = new Map<number, MonthlyRainfall[]>();
+  for (let timestamp = Date.parse(`${source.start}T00:00:00Z`); timestamp <= Date.parse(`${source.end}T00:00:00Z`); timestamp += 86_400_000) {
+    const day = new Date(timestamp);
+    const months = byYear.get(day.getUTCFullYear()) ?? Array.from({ length: 12 }, (_, index) => ({ month: index + 1, totalMm: null, observedDays: 0, missingDays: 0 } satisfies MonthlyRainfall));
+    const month = months[day.getUTCMonth()];
+    if (month) month.missingDays += 1;
+    byYear.set(day.getUTCFullYear(), months);
+  }
   for (const { values } of readCsv(weatherCsv, WEATHER_HEADERS)) {
     const date = values.date ?? "";
     const year = Number(date.slice(0, 4));
@@ -70,10 +77,10 @@ export function buildDatasetView(manifest: unknown, weatherCsv: string, labelsCs
     } satisfies MonthlyRainfall));
     const month = months[monthIndex];
     if (!month) throw new DatasetInputError("Bulan observasi tidak valid.");
-    if (values.rainfall_mm === "") month.missingDays += 1;
-    else {
+    if (values.rainfall_mm !== "") {
       month.totalMm = (month.totalMm ?? 0) + Number(values.rainfall_mm);
       month.observedDays += 1;
+      month.missingDays -= 1;
     }
     byYear.set(year, months);
   }
