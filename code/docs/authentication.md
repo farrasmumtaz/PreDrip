@@ -21,3 +21,8 @@
 
 Jalankan `npm.cmd run security:test`. Tes memakai database sementara terpisah,
 bukan `prisma/dev.db`. Jangan gunakan tes web lama pada database produksi.
+
+Setelah `npm.cmd run build`, jalankan `npm.cmd run security:test:web` untuk
+register/login/logout, error validasi reset, pencabutan link/session, recovery
+produksi, rate limit, serta penulisan API sebenarnya. Perintah ini membuat server
+di port acak dengan SQLite sementara dan membersihkan server/database setelah tes.

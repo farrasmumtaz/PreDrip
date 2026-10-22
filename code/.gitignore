@@ -7,6 +7,7 @@ dist
 *.log
 coverage
 prisma/dev.db
+prisma/dev.db-*
 .data-tools/
 research/data/raw/*
 research/data/normalized/*
