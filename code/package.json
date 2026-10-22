@@ -19,6 +19,7 @@
     "weather:test": "npm run weather:build && node --test .data-tools/weather/tests/weather/bmkg.test.js",
     "weather:check": "npm run weather:build && node .data-tools/weather/tests/weather/live.js",
     "weather:test:web": "npm run weather:build && node --test .data-tools/weather/tests/weather/dashboard-web.test.js",
+    "web:test:assets": "npm run weather:build && node --test .data-tools/weather/tests/weather/assets.test.js",
     "data:audit:example": "npm run data:audit -- --weather research/fixtures/weather.synthetic.csv --labels research/fixtures/labels.synthetic.csv --region kota-bandung --kind synthetic",
     "data:inspect:saca": "npm run data:build && node .data-tools/inspect-saca.js",
     "data:acquire:era5": "npm run data:build && node .data-tools/acquire-era5.js",
