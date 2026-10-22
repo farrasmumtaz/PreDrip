@@ -11,7 +11,8 @@
     "security:test:web": "tsc -p tests/security/tsconfig.json && node --test .data-tools/security/tests/security/http.js",
     "data:build": "tsc -p research/tsconfig.json",
     "data:audit": "npm run data:build && node .data-tools/cli.js",
-    "data:test": "npm run data:build && node --test .data-tools/audit.test.js",
+    "data:test": "npm run data:build && node --test .data-tools/audit.test.js .data-tools/dibi.test.js",
+    "data:import:dibi": "npm run data:build && node .data-tools/import-dibi.js",
     "data:test:web": "npm run data:build && node --test .data-tools/dataset-web.test.js",
     "weather:build": "tsc -p tests/weather/tsconfig.json",
     "weather:test": "npm run weather:build && node --test .data-tools/weather/tests/weather/bmkg.test.js",
@@ -43,6 +44,7 @@
     "@types/react-dom": "19.0.4",
     "eslint": "9.28.0",
     "eslint-config-next": "15.5.19",
+    "hyparquet": "1.31.5",
     "typescript": "5.8.3"
   },
   "overrides": {
