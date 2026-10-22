@@ -19,7 +19,7 @@ export default async function ForgotPasswordPage({
       <section className="panel">
         <div className="eyebrow">PreDrip</div>
         <h1>Lupa password</h1>
-        <p>Masukkan email akun. Pada mode development, link reset tampil di terminal.</p>
+        <p>{process.env.NODE_ENV === "production" ? "Pemulihan password belum tersedia. Hubungi pengelola PreDrip." : "Masukkan email akun. Pada mode development, link reset tampil di terminal."}</p>
         {params?.error ? (
           <div className="message message-error">{params.error}</div>
         ) : null}
@@ -31,7 +31,7 @@ export default async function ForgotPasswordPage({
             Email
             <input name="email" type="email" autoComplete="email" required />
           </label>
-          <button className="button" type="submit">
+          <button className="button" type="submit" disabled={process.env.NODE_ENV === "production"}>
             Kirim link reset
           </button>
         </form>

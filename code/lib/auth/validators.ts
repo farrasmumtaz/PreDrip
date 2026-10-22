@@ -1,4 +1,5 @@
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const passwordSchema = z
   .string()
@@ -6,7 +7,8 @@ const passwordSchema = z
   .max(72, "Password maksimal 72 karakter.")
   .regex(/[A-Z]/, "Password wajib memiliki minimal 1 huruf besar.")
   .regex(/[a-z]/, "Password wajib memiliki minimal 1 huruf kecil.")
-  .regex(/[0-9]/, "Password wajib memiliki minimal 1 angka.");
+  .regex(/[0-9]/, "Password wajib memiliki minimal 1 angka.")
+  .refine((value) => !bcrypt.truncates(value), "Password maksimal 72 byte UTF-8.");
 
 export const registerSchema = z.object({
   name: z.string().trim().min(2, "Nama minimal 2 karakter.").max(120),
@@ -17,7 +19,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().trim().email("Format email tidak valid.").max(255),
-  password: z.string().min(1, "Password wajib diisi."),
+  password: z.string().min(1, "Password wajib diisi.").max(72).refine((value) => !bcrypt.truncates(value), "Password maksimal 72 byte UTF-8."),
 });
 
 export const forgotPasswordSchema = z.object({

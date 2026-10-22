@@ -14,6 +14,8 @@ import {
 import { addMinutes, createPlainToken, hashToken } from "@/lib/auth/tokens";
 import { sendPasswordResetEmail } from "@/lib/mail/password-reset";
 import { prisma } from "@/lib/prisma";
+import { allowAuthRequest } from "@/lib/auth/rate-limit";
+import { completePasswordReset } from "@/lib/auth/reset-password";
 
 function readFormValue(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -21,7 +23,7 @@ function readFormValue(formData: FormData, key: string): string {
 }
 
 function redirectWithError(path: string, message: string): never {
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
 }
 
 function redirectWithSuccess(path: string, message: string): never {
@@ -40,6 +42,7 @@ export async function registerAction(formData: FormData): Promise<void> {
     redirectWithError("/register", parsed.error.issues[0]?.message ?? "Input tidak valid.");
   }
 
+  if (!await allowAuthRequest("register", parsed.data.email)) redirectWithError("/register", "Terlalu banyak permintaan. Coba lagi dalam 15 menit.");
   const passwordHash = await hashPassword(parsed.data.password);
 
   try {
@@ -80,6 +83,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirectWithError("/login", parsed.error.issues[0]?.message ?? "Input tidak valid.");
   }
 
+  if (!await allowAuthRequest("login", parsed.data.email)) redirectWithError("/login", "Terlalu banyak permintaan. Coba lagi dalam 15 menit.");
   const user = await prisma.user.findUnique({
     where: {
       email: parsed.data.email.toLowerCase(),
@@ -113,6 +117,9 @@ export async function logoutAction(): Promise<void> {
 }
 
 export async function forgotPasswordAction(formData: FormData): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    redirectWithError("/forgot-password", "Pemulihan password belum tersedia. Hubungi pengelola PreDrip.");
+  }
   const parsed = forgotPasswordSchema.safeParse({
     email: readFormValue(formData, "email"),
   });
@@ -124,6 +131,7 @@ export async function forgotPasswordAction(formData: FormData): Promise<void> {
     );
   }
 
+  if (!await allowAuthRequest("forgot", parsed.data.email)) redirectWithError("/forgot-password", "Terlalu banyak permintaan. Coba lagi dalam 15 menit.");
   const user = await prisma.user.findUnique({
     where: {
       email: parsed.data.email.toLowerCase(),
@@ -167,12 +175,14 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
   });
 
   if (!parsed.success) {
+    const token = readFormValue(formData, "token");
     redirectWithError(
-      "/reset-password",
+      /^[A-Za-z0-9_-]{43}$/.test(token) ? `/reset-password?token=${encodeURIComponent(token)}` : "/reset-password",
       parsed.error.issues[0]?.message ?? "Input tidak valid.",
     );
   }
 
+  if (!await allowAuthRequest("reset", parsed.data.token)) redirectWithError("/reset-password", "Terlalu banyak permintaan. Coba lagi dalam 15 menit.");
   const tokenHash = hashToken(parsed.data.token);
   const resetToken = await prisma.passwordResetToken.findUnique({
     where: {
@@ -192,29 +202,9 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
 
   const passwordHash = await hashPassword(parsed.data.password);
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: {
-        id: resetToken.userId,
-      },
-      data: {
-        passwordHash,
-      },
-    }),
-    prisma.passwordResetToken.update({
-      where: {
-        id: resetToken.id,
-      },
-      data: {
-        usedAt: new Date(),
-      },
-    }),
-    prisma.session.deleteMany({
-      where: {
-        userId: resetToken.userId,
-      },
-    }),
-  ]);
+  if (!await completePasswordReset(tokenHash, passwordHash)) {
+    redirectWithError("/reset-password", "Token reset tidak valid atau sudah kedaluwarsa.");
+  }
 
   redirectWithSuccess("/login", "Password berhasil direset. Silakan login ulang.");
 }

@@ -135,3 +135,12 @@ model CitizenReport {
 
   
 }
+
+model RequestLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("request_limits")
+}
