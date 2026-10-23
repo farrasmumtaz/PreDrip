@@ -14,6 +14,7 @@
     "data:test": "npm run data:build && node --test .data-tools/audit.test.js .data-tools/dibi.test.js .data-tools/experiment.test.js",
     "experiment:train": "npm run data:build && node .data-tools/train-experiment.js",
     "data:import:dibi": "npm run data:build && node .data-tools/import-dibi.js",
+    "data:audit:bandung-raya": "npm run data:build && node .data-tools/audit-bandung-raya.js",
     "data:test:web": "npm run data:build && node --test .data-tools/dataset-web.test.js",
     "weather:build": "tsc -p tests/weather/tsconfig.json",
     "weather:test": "npm run weather:build && node --test .data-tools/weather/tests/weather/bmkg.test.js",

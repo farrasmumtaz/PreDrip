@@ -6,10 +6,10 @@ const rowSchema = z.object({
   kejadian: z.object({ nama: z.string(), url: z.string() }),
 });
 export interface DibiEvent { date: string; sourceRef: string }
-export interface DibiSnapshot {
+export interface DibiSnapshot<RegionId extends string = "kota-bandung"> {
   schemaVersion: 1;
   kind: "reported-events-not-ground-truth";
-  regionId: "kota-bandung";
+  regionId: RegionId;
   sourceSha256: string;
   archiveRows: number;
   archiveStart: string;
@@ -18,6 +18,10 @@ export interface DibiSnapshot {
 }
 
 export function extractDibi(rows: readonly unknown[], sourceSha256: string): DibiSnapshot {
+  return extractRegionalDibi(rows, sourceSha256, { code: "3273", id: "kota-bandung", sourceName: "Kota Bandung" });
+}
+
+export function extractRegionalDibi<RegionId extends string>(rows: readonly unknown[], sourceSha256: string, region: { code: string; id: RegionId; sourceName: string }): DibiSnapshot<RegionId> {
   if (!/^[a-f0-9]{64}$/.test(sourceSha256) || rows.length === 0) throw new Error("Arsip/hash DIBI tidak valid.");
   const events: DibiEvent[] = [];
   const sources = new Map<string, string>();
@@ -25,17 +29,17 @@ export function extractDibi(rows: readonly unknown[], sourceSha256: string): Dib
   for (const raw of rows) {
     const row = rowSchema.parse(raw);
     dates.push(row.tglan);
-    if (row.level1 !== "3273" || row.kejadian.nama !== "Banjir") continue;
-    if (!row.nwil.startsWith("Kota Bandung,") || !/^https:\/\/dibi\.bnpb\.go\.id\/d\/r\/\d+$/.test(row.kejadian.url)) throw new Error("Identitas wilayah/referensi DIBI perlu ditinjau.");
+    if (row.level1 !== region.code || row.kejadian.nama !== "Banjir") continue;
+    if (!row.nwil.startsWith(`${region.sourceName},`) || !/^https:\/\/dibi\.bnpb\.go\.id\/d\/r\/\d+$/.test(row.kejadian.url)) throw new Error("Identitas wilayah/referensi DIBI perlu ditinjau.");
     const previous = sources.get(row.kejadian.url);
     if (previous && previous !== row.tglan) throw new Error("Sumber DIBI yang sama memiliki tanggal berbeda.");
     if (!previous) events.push({ date: row.tglan, sourceRef: row.kejadian.url });
     sources.set(row.kejadian.url, row.tglan);
   }
-  if (!events.length) throw new Error("Tidak ada laporan banjir Kota Bandung dalam arsip.");
+  if (!events.length) throw new Error(`Tidak ada laporan banjir ${region.id} dalam arsip.`);
   dates.sort();
   return {
-    schemaVersion: 1, kind: "reported-events-not-ground-truth", regionId: "kota-bandung",
+    schemaVersion: 1, kind: "reported-events-not-ground-truth", regionId: region.id,
     sourceSha256, archiveRows: rows.length, archiveStart: dates[0]!, archiveEnd: dates[dates.length - 1]!,
     events: events.sort((a, b) => a.date.localeCompare(b.date)),
   };

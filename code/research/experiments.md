@@ -96,3 +96,32 @@ tidak menentukan status Aman/Waspada/Bahaya.
 Build tracing `/dashboard` menyertakan ketiga artefak lokal tersebut. Instalasi
 atau deployment baru perlu menyediakan snapshot dan menjalankan training dahulu;
 artefak tetap tidak dilacak Git. Tidak ada endpoint unduh data/model publik baru.
+
+## Kelayakan Bandung Raya
+
+Audit empat wilayah pilot (Node.js 22.12+):
+
+```powershell
+npm.cmd run data:audit:bandung-raya -- --file "C:\Users\farra\Downloads\train-00000-of-00001.parquet"
+```
+
+Output default `research/reports/bandung-raya-feasibility-v1/`; jika sudah ada,
+gunakan `--out research/reports/bandung-raya-feasibility-v3`. Output tidak ditimpa.
+CLI menulis snapshot kejadian terpisah per wilayah dan `feasibility.json`, tanpa
+training atau perubahan dashboard. Wilayah tanpa file cuaca berstatus `missing`;
+cuaca yang tersedia wajib cocok dengan manifest akuisisi dan hash-nya.
+
+Cuaca Kota Bandung memakai snapshot sebelumnya. Tiga snapshot tambahan:
+
+```powershell
+npm.cmd run data:acquire:era5 -- --latitude=-7.001 --longitude=107.625 --region kabupaten-bandung --start 2015-01-01 --end 2024-11-21
+npm.cmd run data:acquire:era5 -- --latitude=-6.833 --longitude=107.49 --region kabupaten-bandung-barat --start 2015-01-01 --end 2024-11-21
+npm.cmd run data:acquire:era5 -- --latitude=-6.87 --longitude=107.54 --region kota-cimahi --start 2015-01-01 --end 2024-11-21
+```
+
+Jangan ulangi akuisisi jika snapshot tersedia. Titik pilot bukan representasi
+seluruh administrasi/DAS terverifikasi. Audit mempertahankan kode wilayah,
+menghitung tanggal unik per wilayah, menandai tahun tanpa laporan, memeriksa tujuh
+hari cuaca sebelum tanggal laporan, dan menandai grid sama antarwilayah.
+
+Lihat [hasil kelayakan aktual](findings/2026-10-23-bandung-raya-feasibility.md).
